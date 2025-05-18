@@ -66,10 +66,16 @@ def process_incr(**kwargs):
 
 
 def buffer_incr(model, *args, **kwargs):
-    """
-    Call `buffer.incr` task, resolving the model name first.
+    """Schedule :func:`buffer.incr` for the given ``model``.
 
-    `model_name` must be in form `app_label.model_name` e.g. `sentry.group`.
+    ``args`` and ``kwargs`` mirror the parameters of :meth:`Buffer.incr`. The most
+    common keyword arguments are ``columns`` (a mapping of column names to
+    increments), ``filters`` (used to identify the row to update), ``extra``
+    (additional columns to set directly), and ``signal_only`` (skip database
+    writes and only emit the ``buffer_incr_complete`` signal).
+
+    If ``SENTRY_BUFFER_INCR_AS_CELERY_TASK`` is enabled the call is queued via
+    Celery, otherwise it runs inline.
     """
     (buffer_incr_task.delay if settings.SENTRY_BUFFER_INCR_AS_CELERY_TASK else buffer_incr_task)(
         app_label=model._meta.app_label, model_name=model._meta.model_name, args=args, kwargs=kwargs
@@ -81,8 +87,11 @@ def buffer_incr(model, *args, **kwargs):
     queue="buffers.incr",
 )
 def buffer_incr_task(app_label, model_name, args, kwargs):
-    """
-    Call `buffer.incr`, resolving the model first.
+    """Execute :meth:`Buffer.incr` for ``app_label.model_name``.
+
+    ``model_name`` should be the lowercase model identifier as provided by
+    Django's ``Model._meta.model_name`` attribute. ``args`` and ``kwargs`` are
+    forwarded directly to :meth:`Buffer.incr`.
     """
     from sentry import buffer
 

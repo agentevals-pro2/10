@@ -2209,6 +2209,9 @@ def _process_existing_aggregate(
         "title": _get_updated_group_title(existing_metadata, incoming_metadata),
     }
 
+    # ``times_seen`` must be provided via ``columns`` so that ``Buffer.incr``
+    # performs an atomic increment. The rest of the updated values are passed
+    # through ``extra`` which sets them directly on the model.
     update_kwargs = {"times_seen": 1}
 
     buffer_incr(Group, update_kwargs, {"id": group.id}, updated_group_values)

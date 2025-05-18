@@ -102,12 +102,18 @@ class Buffer(Service):
         extra: dict[str, Any] | None = None,
         signal_only: bool | None = None,
     ) -> None:
-        """
-        >>> incr(Group, columns={'times_seen': 1}, filters={'pk': group.pk})
-        signal_only - added to indicate that `process` should only call the complete
-        signal handler with the updated model and skip creates/updates in the database. this
-        is useful in cases where we need to do additional processing before writing to the
-        database and opt to do it in a `buffer_incr_complete` receiver.
+        """Queue an increment operation for ``model``.
+
+        ``columns`` is a mapping of field names to the values that should be
+        incremented atomically. ``filters`` identifies the row to update.
+        ``extra`` allows setting additional columns directly when the buffered
+        values are flushed. Set ``signal_only`` to ``True`` to skip database
+        writes and only emit the ``buffer_incr_complete`` signal. This can be
+        useful when additional work needs to be done before persisting changes.
+
+        Example::
+
+            incr(Group, columns={"times_seen": 1}, filters={"pk": group.pk})
         """
         process_incr.apply_async(
             kwargs={
